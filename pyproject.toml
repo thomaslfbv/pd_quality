@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pd_quality"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name="Thomas Lefebvre", email="thomas.lfbv@icloud.com" },
 ]
@@ -22,6 +22,9 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+[project.optional-dependencies]
+rich = ["rich>=13.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/thomaslfbv/pd_quality"
