@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pd_quality"
+version = "0.1.0"
+authors = [
+  { name="Thomas Lefebvre", email="thomas.lfbv@icloud.com" },
+]
+description = "Une extension Pandas pour générer un rapport rapide sur la qualité des données de votre dataframe, j'en avais marre de tout réecris à la main à chaque nouveau projet."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "pandas>=1.5.0",
+    "numpy>=1.20.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/thomaslfbv/pd_quality"
