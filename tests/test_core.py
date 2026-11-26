@@ -74,3 +74,19 @@ def test_labels_in_rich():
     output = captured.get()
     assert output.count("[red]") == 2
     assert "uniques (1) : 0" in output
+
+
+
+def test_notebook_leaves_default_rendering_to_jupyter(monkeypatch):
+    import pd_quality.core as core
+
+    rendered = []
+    monkeypatch.setattr(core, "_in_notebook", lambda: True)
+    monkeypatch.setattr(core.QualityReport, "display", lambda report: rendered.append(report))
+    df = pd.DataFrame({"a": [1, 2]})
+
+    report = df.quality.report()
+    assert rendered == []
+    assert "Rapport qualité" in report._repr_html_()
+    explicit = df.quality.report(display=True)
+    assert rendered == [explicit]

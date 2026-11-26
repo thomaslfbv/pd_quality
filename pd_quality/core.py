@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import pandas as pd
 
-from .report import QualityReport
+from .report import QualityReport, _in_notebook
 
 
 def _comparison_key(value):
@@ -47,13 +49,13 @@ class QualityAnalyzer:
         """Return per-column dtypes."""
         return self._obj.dtypes
 
-    def report(self, display: bool = True) -> QualityReport:
+    def report(self, display: Optional[bool] = None) -> QualityReport:
         """Build a :class:`QualityReport`, optionally rendering it inline.
 
         Args:
-            display: When True (default), auto-render the report in the
-                current environment (rich in terminals, HTML in Jupyter).
-                Set False to silently return the report object.
+            display: By default, print in a terminal and let Jupyter render
+                the returned object. True explicitly displays the report;
+                False skips explicit display.
         """
         missing_df = self.check_missing()
         memory_mb = self._obj.memory_usage(deep=True).sum() / (1024**2)
@@ -78,6 +80,6 @@ class QualityAnalyzer:
             constant_cols=constant_cols,
             unique_cols=unique_cols,
         )
-        if display:
+        if display is True or (display is None and not _in_notebook()):
             report.display()
         return report

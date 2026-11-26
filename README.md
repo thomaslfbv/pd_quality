@@ -67,7 +67,8 @@ Dans un notebook, le même appel renvoie automatiquement un rendu HTML : KPI car
 ## API
 
 ```python
-report = df.quality.report()                 # affiche + retourne l'objet
+df.quality.report()                          # en dernière ligne de cellule : un seul rendu HTML
+report = df.quality.report(display=True)     # affiche même lors d’une affectation
 report = df.quality.report(display=False)    # silencieux, retourne juste l'objet
 
 # Accès programmatique
