@@ -1,6 +1,22 @@
+from __future__ import annotations
+
 import pandas as pd
 
 from .report import QualityReport
+
+
+def _comparison_key(value):
+    """Make nested containers hashable while preserving their equality rules."""
+    if isinstance(value, (list, tuple)):
+        kind = list if isinstance(value, list) else tuple
+        return kind, tuple(_comparison_key(item) for item in value)
+    if isinstance(value, dict):
+        return dict, frozenset(
+            (_comparison_key(key), _comparison_key(item)) for key, item in value.items()
+        )
+    if isinstance(value, (set, frozenset)):
+        return frozenset(_comparison_key(item) for item in value)
+    return value
 
 
 @pd.api.extensions.register_dataframe_accessor("quality")
@@ -18,26 +34,18 @@ class QualityAnalyzer:
 
     def check_duplicates(self) -> int:
         """Count fully duplicated rows."""
-        return int(self._obj.duplicated().sum())
+        try:
+            duplicated = self._obj.duplicated()
+        except TypeError:
+            comparable = self._obj.apply(
+                lambda col: col.map(_comparison_key) if col.dtype == object else col
+            )
+            duplicated = comparable.duplicated()
+        return int(duplicated.sum())
 
     def check_types(self) -> pd.Series:
         """Return per-column dtypes."""
         return self._obj.dtypes
-
-    def _constant_columns(self) -> list[str]:
-        """Columns with a single unique non-null value."""
-        return [c for c in self._obj.columns if self._obj[c].nunique(dropna=True) <= 1]
-
-    def _unique_columns(self) -> list[str]:
-        """Columns where every non-null value is unique (primary-key candidates)."""
-        n = len(self._obj)
-        if n == 0:
-            return []
-        return [
-            c
-            for c in self._obj.columns
-            if self._obj[c].notna().all() and self._obj[c].nunique() == n
-        ]
 
     def report(self, display: bool = True) -> QualityReport:
         """Build a :class:`QualityReport`, optionally rendering it inline.
@@ -49,14 +57,26 @@ class QualityAnalyzer:
         """
         missing_df = self.check_missing()
         memory_mb = self._obj.memory_usage(deep=True).sum() / (1024**2)
+        constant_cols = []
+        unique_cols = []
+        for label, column in self._obj.items():
+            try:
+                distinct = column.nunique(dropna=True)
+            except TypeError:
+                distinct = column.map(_comparison_key).nunique(dropna=True)
+            if distinct == 1:
+                constant_cols.append(label)
+            if distinct and distinct == len(column):
+                unique_cols.append(label)
+
         report = QualityReport(
             shape=self._obj.shape,
             memory_mb=memory_mb,
             duplicates=self.check_duplicates(),
             missing=missing_df,
             dtypes_summary=self.check_types().value_counts(),
-            constant_cols=self._constant_columns(),
-            unique_cols=self._unique_columns(),
+            constant_cols=constant_cols,
+            unique_cols=unique_cols,
         )
         if display:
             report.display()

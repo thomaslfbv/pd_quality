@@ -71,7 +71,6 @@ report = df.quality.report()                 # affiche + retourne l'objet
 report = df.quality.report(display=False)    # silencieux, retourne juste l'objet
 
 # Accès programmatique
-report.to_dict()         # dict complet
 report["shape"]          # accès par clé (rétro-compatible)
 report.missing           # DataFrame des manquants
 report.constant_cols     # liste

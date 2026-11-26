@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from html import escape
+from typing import Any, Hashable
 
 import pandas as pd
 
 try:
     from rich.console import Console, Group
+    from rich.markup import escape as escape_markup
     from rich.panel import Panel
     from rich.table import Table
 
@@ -60,8 +62,8 @@ class QualityReport:
     duplicates: int
     missing: pd.DataFrame  # cols: Missing, Percentage (%)
     dtypes_summary: pd.Series
-    constant_cols: list[str] = field(default_factory=list)
-    unique_cols: list[str] = field(default_factory=list)
+    constant_cols: list[Hashable] = field(default_factory=list)
+    unique_cols: list[Hashable] = field(default_factory=list)
 
     # ------------------------------------------------------------------ public
 
@@ -143,7 +145,7 @@ class QualityReport:
             pct = float(row["Percentage (%)"])
             color = _RICH_COLORS[_level(pct)]
             table.add_row(
-                str(col),
+                escape_markup(str(col)),
                 f"{int(row['Missing']):,}",
                 f"[{color}]{pct:.1f}%[/]",
                 f"[{color}]{_bar(pct)}[/]",
@@ -155,18 +157,18 @@ class QualityReport:
         grid.add_column(style="bold magenta")
         grid.add_column(justify="right")
         for dtype, count in self.dtypes_summary.items():
-            grid.add_row(str(dtype), f"{int(count)}")
+            grid.add_row(escape_markup(str(dtype)), f"{int(count)}")
         return Panel(grid, title="🏷️  Types", border_style="magenta")
 
     def _rich_notes_panel(self):
         notes = []
         if self.constant_cols:
-            joined = ", ".join(self.constant_cols)
+            joined = escape_markup(", ".join(map(str, self.constant_cols)))
             notes.append(
                 f"[yellow]⚠ Colonnes constantes ({len(self.constant_cols)})[/] : {joined}"
             )
         if self.unique_cols:
-            joined = ", ".join(self.unique_cols)
+            joined = escape_markup(", ".join(map(str, self.unique_cols)))
             notes.append(
                 f"[cyan]🔑 Colonnes 100% uniques ({len(self.unique_cols)})[/] : {joined}"
             )
@@ -233,7 +235,7 @@ class QualityReport:
             )
             rows_html.append(
                 "<tr>"
-                f'<td style="padding:4px 8px;">{col}</td>'
+                f'<td style="padding:4px 8px;">{escape(str(col))}</td>'
                 f'<td style="padding:4px 8px;text-align:right;">{int(row["Missing"]):,}</td>'
                 f'<td style="padding:4px 8px;text-align:right;color:{color};font-weight:600;">{pct:.1f}%</td>'
                 f'<td style="padding:4px 8px;">{bar}</td>'
@@ -252,7 +254,7 @@ class QualityReport:
 
     def _html_types_section(self) -> str:
         rows_html = "".join(
-            f'<tr><td style="padding:2px 8px;color:#a21caf;">{dtype}</td>'
+            f'<tr><td style="padding:2px 8px;color:#a21caf;">{escape(str(dtype))}</td>'
             f'<td style="padding:2px 8px;text-align:right;">{int(count)}</td></tr>'
             for dtype, count in self.dtypes_summary.items()
         )
@@ -266,12 +268,12 @@ class QualityReport:
         if self.constant_cols:
             parts.append(
                 f'<div style="color:#d97706;">⚠ Colonnes constantes ({len(self.constant_cols)}) : '
-                f'{", ".join(self.constant_cols)}</div>'
+                f'{escape(", ".join(map(str, self.constant_cols)))}</div>'
             )
         if self.unique_cols:
             parts.append(
                 f'<div style="color:#0891b2;">🔑 Colonnes 100% uniques ({len(self.unique_cols)}) : '
-                f'{", ".join(self.unique_cols)}</div>'
+                f'{escape(", ".join(map(str, self.unique_cols)))}</div>'
             )
         if not parts:
             return ""
@@ -301,7 +303,7 @@ class QualityReport:
             )
         lines += ["", "-- Types --", self.dtypes_summary.to_string()]
         if self.constant_cols:
-            lines += ["", f"Colonnes constantes : {', '.join(self.constant_cols)}"]
+            lines += ["", f"Colonnes constantes : {', '.join(map(str, self.constant_cols))}"]
         if self.unique_cols:
-            lines += [f"Colonnes 100% uniques : {', '.join(self.unique_cols)}"]
+            lines += [f"Colonnes 100% uniques : {', '.join(map(str, self.unique_cols))}"]
         return "\n".join(lines)
